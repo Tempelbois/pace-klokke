@@ -1,5 +1,5 @@
 name: pace-klokke
-# Starts the pace-quest build in Tempelbois/pace-dashboard when the newest build there is more than 70 minutes old (07-23 Europe/Oslo).
+# Starts the pace-quest build in Tempelbois/pace-dashboard when the newest build there is more than 55 minutes old (07-23 Europe/Oslo).
 # GitHub's own cron drops runs, so this job loops for about 5.5 hours and then restarts itself. The cron below only revives the chain if it stops.
 # Public repo: standard runner minutes are free. No dashboard code or data lives here.
 on:
@@ -16,27 +16,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 345
     steps:
-      - name: Start pace-quest when the last build is older than 70 minutes
+      - name: Start pace-quest when the last build is older than 55 minutes
         env:
           GH_TOKEN: ${{ secrets.DASHBOARD_DISPATCH_TOKEN }}
           TARGET: Tempelbois/pace-dashboard
         run: |
           end=$(( $(date +%s) + 19800 ))
+          fails=0
           while [ "$(date +%s)" -lt "$end" ]; do
             h=$(TZ=Europe/Oslo date +%-H)
             if [ "$h" -ge 7 ] && [ "$h" -le 23 ]; then
               last=$(gh run list -R "$TARGET" --workflow pace-quest --limit 1 --json createdAt -q '.[0].createdAt' || true)
               if [ -z "$last" ]; then
+                fails=$(( fails + 1 ))
                 echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') could not read the last build"
               else
                 age=$(( $(date +%s) - $(date -d "$last" +%s) ))
-                if [ "$age" -ge 4200 ]; then
-                  gh workflow run pace-quest -R "$TARGET" && echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') started pace-quest (last build $(( age / 60 )) min old)" || echo "could not start pace-quest"
+                if [ "$age" -ge 3300 ]; then
+                  gh workflow run pace-quest -R "$TARGET" && echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') started pace-quest (last build $(( age / 60 )) min old)" || { fails=$(( fails + 1 )); echo "could not start pace-quest"; }
                 fi
               fi
             fi
             sleep 600
           done
+          if [ "$fails" -gt 0 ]; then
+            echo "::error::$fails calls to $TARGET failed, check DASHBOARD_DISPATCH_TOKEN"
+            exit 1
+          fi
       - name: Restart the chain
         if: always()
         env:
