@@ -26,7 +26,7 @@ jobs:
           while [ "$(date +%s)" -lt "$end" ]; do
             h=$(TZ=Europe/Oslo date +%-H)
             if [ "$h" -ge 7 ] && [ "$h" -le 23 ]; then
-              last=$(gh run list -R "$TARGET" --workflow pace-quest --limit 1 --json createdAt -q '.[0].createdAt' || true)
+              last=$(gh run list -R "$TARGET" --workflow pace-quest --branch main --limit 1 --json createdAt -q '.[0].createdAt' || true)
               if [ -z "$last" ]; then
                 fails=$(( fails + 1 ))
                 echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') could not read the last build"
@@ -40,7 +40,7 @@ jobs:
             sleep 600
           done
           if [ "$fails" -gt 0 ]; then
-            echo "::error::$fails calls to $TARGET failed, check DASHBOARD_DISPATCH_TOKEN"
+            echo "::error::$fails calls to $TARGET failed, see the log above (token, permissions or API)"
             exit 1
           fi
       - name: Restart the chain
