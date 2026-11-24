@@ -33,7 +33,7 @@ jobs:
               else
                 age=$(( $(date +%s) - $(date -d "$last" +%s) ))
                 if [ "$age" -ge 3300 ]; then
-                  gh workflow run pace-quest -R "$TARGET" && echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') started pace-quest (last build $(( age / 60 )) min old)" || { fails=$(( fails + 1 )); echo "could not start pace-quest"; }
+                  gh workflow run pace-quest -R "$TARGET" --ref main && echo "$(TZ=Europe/Oslo date '+%d.%m %H:%M') started pace-quest (last build $(( age / 60 )) min old)" || { fails=$(( fails + 1 )); echo "could not start pace-quest"; }
                 fi
               fi
             fi
